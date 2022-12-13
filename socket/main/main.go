@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	fmt.Println("[=== Server Socket === ] by: Liskov")
+	fmt.Println("[=== Server Socket TCP === ] by: Liskov")
 
 	listen, err := net.Listen("tcp", ":8080")
 	if err != nil {
@@ -30,7 +30,7 @@ func handler(conn net.Conn) {
 		m, err := bufio.NewReader(conn).ReadString('\n')
 		if err != nil {
 			if err == io.EOF {
-				fmt.Println("Connection closed")
+				fmt.Printf("%v Connection closed\n", conn.RemoteAddr())
 				conn.Close()
 				return
 			}
