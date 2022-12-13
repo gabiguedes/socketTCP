@@ -1,17 +1,16 @@
 ## :guardsman: Servidor e cliente socket :guardsman:
 
-### Laboratório de estudos [GO, Goroutines, Redes]
+### Laboratório de estudos [Go, Goroutines, Canais, Redes]
 
 #### Run project
 
-cd /socket
-
 ```bash
+cd /socket
 go run main.go
 ```
 
-cd /clientserver
 ```bash
+cd /clientserver
 go run main.go
 ```
 
