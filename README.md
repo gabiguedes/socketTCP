@@ -4,6 +4,8 @@
 
 #### Run project
 
+> Go version 1.19
+
 ```bash
 cd /socket
 go run main.go
