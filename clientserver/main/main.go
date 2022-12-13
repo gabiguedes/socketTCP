@@ -27,7 +27,7 @@ func readStdin() {
 
 func readConn(conn net.Conn) {
 	for {
-		reader := bufio.NewReader(os.Stdin)
+		reader := bufio.NewReader(conn)
 		m, err := reader.ReadString('\n')
 		if err != nil {
 			errorChan <- err
