@@ -67,8 +67,13 @@ RECONNECT:
 		for {
 			select {
 			case m := <-output:
-				fmt.Printf("Sending: %q\n", m)
-
+				if m == "ping\n" {
+					fmt.Println("Received ping")
+					fmt.Println("Sending pong")
+					conn.Write([]byte("pong\n"))
+					continue
+				}
+				fmt.Printf("Received %q\n", m)
 			case m := <-input:
 				fmt.Printf("Sending: %q\n", m)
 				_, err := conn.Write([]byte(m + "\n"))

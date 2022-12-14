@@ -5,43 +5,92 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"time"
 )
 
-func main() {
-	fmt.Println("[=== Server Socket TCP === ] by: Liskov")
-
-	listen, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		fmt.Println(err)
-		panic(err)
-	}
-
+func handlerReadConn(conn net.Conn, msgReadCh chan string, errCh chan error) {
 	for {
-		conn, err := listen.Accept()
-		if err != nil {
-			panic(err)
+		if msgReadCh == nil {
+			return
 		}
-		go handler(conn)
+		m, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			errCh <- err
+			return
+		}
+		msgReadCh <- m
+	}
+}
+
+func handlerWriteConn(conn net.Conn, msgWriteCh chan string, errCh chan error) {
+	for {
+		m, ok := <-msgWriteCh
+		if !ok {
+			return
+		}
+		_, err := conn.Write([]byte(m))
+		if err != nil {
+			errCh <- err
+			return
+		}
 	}
 }
 
 func handler(conn net.Conn) {
+	pingInterval := time.Second * 5
+	maxPingInterval := time.Second * 15
+	msgReadCh := make(chan string)
+	msgWriteCh := make(chan string)
+	errCh := make(chan error)
+	lastMsgTime := time.Now()
+
+	defer func() {
+		close(msgReadCh)
+		close(msgWriteCh)
+		close(errCh)
+		conn.Close()
+	}()
+
+	go handlerReadConn(conn, msgReadCh, errCh)
+	go handlerWriteConn(conn, msgWriteCh, errCh)
+
 	for {
-		m, err := bufio.NewReader(conn).ReadString('\n')
-		if err != nil {
-			if err == io.EOF {
-				fmt.Printf("%v Connection closed\n", conn.RemoteAddr())
-				conn.Close()
+		select {
+		case <-time.After(pingInterval):
+			if time.Since(lastMsgTime) > pingInterval {
+				fmt.Println("Sending ping")
+				msgWriteCh <- "ping\n"
+			}
+			if time.Since(lastMsgTime) > maxPingInterval {
+				fmt.Println("Inactive connection, closing")
 				return
 			}
-			fmt.Println("Error reading from connection", err)
-			return
+		case msg := <-msgReadCh:
+			lastMsgTime = time.Now()
+			if msg == "pong\n" {
+				fmt.Println("Received pong")
+				continue
+			}
+			fmt.Printf("%v %q\n", conn.RemoteAddr(), msg)
+			msgWriteCh <- msg
+		case err := <-errCh:
+			if err == io.EOF {
+				fmt.Printf("%v Connection closed\n", conn.RemoteAddr())
+				return
+			}
+
 		}
-		_, err = conn.Write([]byte(m))
-		if err != nil {
-			fmt.Println("Error writing to connection")
-			return
-		}
-		fmt.Printf("%v %q\n", conn.RemoteAddr(), m)
+	}
+}
+
+func main() {
+	fmt.Println("Listening on port 8080")
+
+	listen, _ := net.Listen("tcp", ":8080")
+
+	for {
+		conn, _ := listen.Accept()
+		fmt.Println("Connection accepted")
+		go handler(conn)
 	}
 }
