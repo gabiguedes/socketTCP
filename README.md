@@ -15,5 +15,3 @@ go run main.go
 cd /clientserver
 go run main.go
 ```
-
-Observe...
