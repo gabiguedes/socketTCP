@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -85,6 +88,15 @@ func handler(conn net.Conn) {
 
 func main() {
 	fmt.Println("Listening on port 8080")
+
+	sigs := make(chan os.Signal, 1)
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	go func() {
+		<-sigs
+		fmt.Println("\nShutdown server...")
+		os.Exit(0)
+	}()
 
 	listen, _ := net.Listen("tcp", ":8080")
 

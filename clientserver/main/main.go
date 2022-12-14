@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -64,8 +66,15 @@ RECONNECT:
 
 		go readConn(conn)
 
+		sigs := make(chan os.Signal, 1)
+		signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
 		for {
 			select {
+			case <-sigs:
+				fmt.Println("\nDisconnecting...")
+				conn.Close()
+				os.Exit(0)
 			case m := <-output:
 				if m == "ping\n" {
 					fmt.Println("Received ping")
